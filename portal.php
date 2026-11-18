@@ -94,7 +94,19 @@ $buildPortalUrl = static function (array $overrides = []) use ($activeTeacherId,
     return 'portal.php?' . http_build_query($params);
 };
 
-$schedules = Schedule::all(['teacher_id' => $activeTeacherId]);
+$year = (int) $dt->format('Y');
+$month = (int) $dt->format('n');
+$daysInMonth = (int) $dt->format('t');
+$firstWeekday = (int) $dt->modify('first day of this month')->format('N'); // 1=Mon .. 7=Sun
+
+$rangeStart = $viewMode === 'month' ? $dt->modify('first day of this month')->format('Y-m-d') : $weekDates[2];
+$rangeEnd = $viewMode === 'month' ? $dt->modify('last day of this month')->format('Y-m-d') : $weekDates[8];
+
+$schedules = Schedule::all([
+    'teacher_id' => $activeTeacherId,
+    'date_from' => $rangeStart,
+    'date_to' => $rangeEnd,
+]);
 $availabilities = Availability::all($activeTeacherId);
 $branches = Branch::all();
 
@@ -115,11 +127,6 @@ foreach ($schedules as $s) {
         $dayWarnings[$d] = $analysis['warnings'];
     }
 }
-
-$year = (int) $dt->format('Y');
-$month = (int) $dt->format('n');
-$daysInMonth = (int) $dt->format('t');
-$firstWeekday = (int) $dt->modify('first day of this month')->format('N'); // 1=Mon .. 7=Sun
 
 renderHeader('Cổng thông tin Giảng viên', 'portal');
 ?>
@@ -221,10 +228,16 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
                 <?php foreach (array_keys(ScheduleOptimizer::SLOTS) as $slotName): ?>
                     <tr>
                         <td><strong><?= e($slotName) ?></strong></td>
-                        <?php foreach (ScheduleOptimizer::DAYS as $dNum => $dName): ?>
+                        <?php foreach (ScheduleOptimizer::DAYS as $dNum => $dName):
+                            $colDate = $weekDates[$dNum];
+                            ?>
                             <td>
                                 <?php if (!empty($grid[$dNum][$slotName])): ?>
-                                    <?php foreach ($grid[$dNum][$slotName] as $item): ?>
+                                    <?php foreach ($grid[$dNum][$slotName] as $item):
+                                        if ($colDate < ($item['start_date'] ?? '1970-01-01') || $colDate > ($item['end_date'] ?? '9999-12-31')) {
+                                            continue;
+                                        }
+                                        ?>
                                         <div class="slot-card">
                                             <strong><?= e($item['subject_name']) ?></strong>
                                             <div>Phòng: <?= e($item['room']) ?></div>
@@ -259,7 +272,11 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
             <div class="cal-cell">
                 <div class="cal-date"><?= $day ?>/<?= $month ?></div>
                 <?php foreach ($daySlots as $slotList): ?>
-                    <?php foreach ($slotList as $item): ?>
+                    <?php foreach ($slotList as $item):
+                        if ($cellDate < ($item['start_date'] ?? '1970-01-01') || $cellDate > ($item['end_date'] ?? '9999-12-31')) {
+                            continue;
+                        }
+                        ?>
                         <div class="slot-card" style="padding:4px 6px;margin-bottom:4px;">
                             <strong><?= e($item['subject_name']) ?></strong>
                             <span><?= e($item['shift_or_periods']) ?> &bull; <?= e($item['room']) ?></span>

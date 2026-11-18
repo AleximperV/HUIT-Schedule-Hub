@@ -42,11 +42,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'room' => trim((string) ($_POST['room'] ?? '')),
             'day_of_week' => (int) ($_POST['day_of_week'] ?? 2),
             'shift_or_periods' => trim((string) ($_POST['shift_or_periods'] ?? '')),
+            'start_date' => trim((string) ($_POST['start_date'] ?? '2026-09-07')),
+            'end_date' => trim((string) ($_POST['end_date'] ?? '2026-12-20')),
             'notes' => trim((string) ($_POST['notes'] ?? '')),
         ];
 
         if ($data['teacher_id'] <= 0 || $data['branch_id'] <= 0 || $data['subject_name'] === '' || $data['room'] === '' || $data['shift_or_periods'] === '') {
             $errors[] = 'Vui lòng điền đầy đủ thông tin học phần, giảng viên, cơ sở, phòng và khung giờ.';
+        } elseif ($data['start_date'] > $data['end_date']) {
+            $errors[] = 'Ngày bắt đầu không được lớn hơn ngày kết thúc.';
         } else {
             $conflicts = ScheduleOptimizer::checkConflicts(
                 $data['teacher_id'],
@@ -202,6 +206,19 @@ renderHeader('Phân lịch Thông minh', 'schedules');
                         <?php endforeach; ?>
                     </select>
                     <button type="button" id="btn-recommend" class="btn btn-accent">Gợi ý GV</button>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="start_date">Áp dụng từ ngày</label>
+                    <input type="date" name="start_date" id="start_date" required
+                        value="<?= e($editing['start_date'] ?? ($_POST['start_date'] ?? '2026-09-07')) ?>">
+                </div>
+                <div class="form-group">
+                    <label for="end_date">Đến ngày</label>
+                    <input type="date" name="end_date" id="end_date" required
+                        value="<?= e($editing['end_date'] ?? ($_POST['end_date'] ?? '2026-12-20')) ?>">
                 </div>
             </div>
 

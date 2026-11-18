@@ -122,9 +122,16 @@ foreach ($teachers as $t) {
 
 // 4. Seed Lịch dạy mẫu (schedules) không trùng phòng & giảng viên
 $stmtSched = $pdo->prepare(
-    'INSERT INTO schedules (teacher_id, branch_id, subject_name, room, day_of_week, shift_or_periods, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO schedules (teacher_id, branch_id, subject_name, room, day_of_week, shift_or_periods, start_date, end_date, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
 );
+
+$dateRanges = [
+    ['2026-09-07', '2026-12-20'],
+    ['2026-11-02', '2026-11-29'],
+    ['2026-11-16', '2026-11-22'],
+    ['2026-10-05', '2026-11-20'],
+];
 
 $roomsByBranch = [
     $branchIds[0] => ['A201', 'A304', 'B102', 'B205', 'C401'],
@@ -155,6 +162,7 @@ foreach ($teachers as $idx => $t) {
         $usedRoomSlots[$rKey] = true;
 
         $subject = $faker->randomElement($t['subjects']);
+        $range = $faker->randomElement($dateRanges);
         $stmtSched->execute([
             $t['id'],
             $branchId,
@@ -162,6 +170,8 @@ foreach ($teachers as $idx => $t) {
             $room,
             $day,
             $slot,
+            $range[0],
+            $range[1],
             'Học kỳ 1 - Năm học 2026-2027',
         ]);
         $insertedCount++;

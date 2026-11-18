@@ -35,6 +35,11 @@ class Schedule
             $sql .= ' AND (s.subject_name LIKE :q OR s.room LIKE :q OR t.full_name LIKE :q)';
             $params['q'] = '%' . trim($filters['q']) . '%';
         }
+        if (!empty($filters['date_from']) && !empty($filters['date_to'])) {
+            $sql .= ' AND s.start_date <= :date_to AND s.end_date >= :date_from';
+            $params['date_from'] = $filters['date_from'];
+            $params['date_to'] = $filters['date_to'];
+        }
 
         $sql .= ' ORDER BY s.day_of_week ASC, s.shift_or_periods ASC, s.id DESC';
         $stmt = $pdo->prepare($sql);
@@ -61,8 +66,8 @@ class Schedule
     {
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare(
-            'INSERT INTO schedules (teacher_id, branch_id, subject_name, room, day_of_week, shift_or_periods, notes)
-             VALUES (:teacher_id, :branch_id, :subject_name, :room, :day_of_week, :shift_or_periods, :notes)'
+            'INSERT INTO schedules (teacher_id, branch_id, subject_name, room, day_of_week, shift_or_periods, start_date, end_date, notes)
+             VALUES (:teacher_id, :branch_id, :subject_name, :room, :day_of_week, :shift_or_periods, :start_date, :end_date, :notes)'
         );
         $stmt->execute([
             'teacher_id' => (int) $data['teacher_id'],
@@ -71,6 +76,8 @@ class Schedule
             'room' => trim($data['room']),
             'day_of_week' => (int) $data['day_of_week'],
             'shift_or_periods' => trim($data['shift_or_periods']),
+            'start_date' => !empty($data['start_date']) ? $data['start_date'] : '2026-09-07',
+            'end_date' => !empty($data['end_date']) ? $data['end_date'] : '2026-12-20',
             'notes' => isset($data['notes']) && $data['notes'] !== '' ? trim($data['notes']) : null,
         ]);
         return (int) $pdo->lastInsertId();
@@ -82,7 +89,8 @@ class Schedule
         $stmt = $pdo->prepare(
             'UPDATE schedules
              SET teacher_id = :teacher_id, branch_id = :branch_id, subject_name = :subject_name,
-                 room = :room, day_of_week = :day_of_week, shift_or_periods = :shift_or_periods, notes = :notes
+                 room = :room, day_of_week = :day_of_week, shift_or_periods = :shift_or_periods,
+                 start_date = :start_date, end_date = :end_date, notes = :notes
              WHERE id = :id'
         );
         return $stmt->execute([
@@ -93,6 +101,8 @@ class Schedule
             'room' => trim($data['room']),
             'day_of_week' => (int) $data['day_of_week'],
             'shift_or_periods' => trim($data['shift_or_periods']),
+            'start_date' => !empty($data['start_date']) ? $data['start_date'] : '2026-09-07',
+            'end_date' => !empty($data['end_date']) ? $data['end_date'] : '2026-12-20',
             'notes' => isset($data['notes']) && $data['notes'] !== '' ? trim($data['notes']) : null,
         ]);
     }

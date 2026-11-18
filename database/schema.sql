@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS `schedules` (
     `room` VARCHAR(50) NOT NULL COMMENT 'Phòng học',
     `day_of_week` TINYINT UNSIGNED NOT NULL COMMENT '2=Thứ 2 ... 7=Thứ 7, 8=Chủ nhật',
     `shift_or_periods` VARCHAR(80) NOT NULL COMMENT 'Buổi hoặc Tiết học cụ thể',
+    `start_date` DATE NOT NULL DEFAULT '2026-09-07' COMMENT 'Ngày bắt đầu áp dụng',
+    `end_date` DATE NOT NULL DEFAULT '2026-12-20' COMMENT 'Ngày kết thúc áp dụng',
     `notes` VARCHAR(255) DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_schedules_teacher` FOREIGN KEY (`teacher_id`) REFERENCES `teachers`(`id`) ON DELETE CASCADE,
