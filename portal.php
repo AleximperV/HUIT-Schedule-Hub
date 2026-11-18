@@ -209,9 +209,8 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
                     <th>Buổi / Tiết</th>
                     <?php foreach (ScheduleOptimizer::DAYS as $dNum => $dName):
                         $colDate = $weekDates[$dNum];
-                        $isToday = $colDate === $todayStr;
                         ?>
-                        <th class="<?= $isToday ? 'today-col' : '' ?>">
+                        <th>
                             <?= e($dName) ?><br>
                             <small style="font-weight:500;color:#475569;"><?= date('d/m/Y', strtotime($colDate)) ?></small>
                         </th>
@@ -222,10 +221,8 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
                 <?php foreach (array_keys(ScheduleOptimizer::SLOTS) as $slotName): ?>
                     <tr>
                         <td><strong><?= e($slotName) ?></strong></td>
-                        <?php foreach (ScheduleOptimizer::DAYS as $dNum => $dName):
-                            $isToday = $weekDates[$dNum] === $todayStr;
-                            ?>
-                            <td class="<?= $isToday ? 'today-col' : '' ?>">
+                        <?php foreach (ScheduleOptimizer::DAYS as $dNum => $dName): ?>
+                            <td>
                                 <?php if (!empty($grid[$dNum][$slotName])): ?>
                                     <?php foreach ($grid[$dNum][$slotName] as $item): ?>
                                         <div class="slot-card">
@@ -258,9 +255,8 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
             $isoN = (int) date('N', strtotime($cellDate)); // 1..7
             $dbDay = $isoN + 1; // 2..8
             $daySlots = $grid[$dbDay] ?? [];
-            $isToday = $cellDate === $todayStr;
             ?>
-            <div class="cal-cell <?= $isToday ? 'today-col' : '' ?>">
+            <div class="cal-cell">
                 <div class="cal-date"><?= $day ?>/<?= $month ?></div>
                 <?php foreach ($daySlots as $slotList): ?>
                     <?php foreach ($slotList as $item): ?>

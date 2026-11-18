@@ -505,9 +505,6 @@ tr:hover td { background: #f8fafc; }
     border-color: #0284c7;
     color: #fff;
 }
-.today-col {
-    background: #fef9c3 !important;
-}
 
 @media print {
     .sidebar, .mobile-topbar, .schedule-toolbar, .footer, .toast-container, .no-print {
