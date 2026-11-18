@@ -205,7 +205,7 @@ renderHeader('Phân lịch Thông minh', 'schedules');
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <button type="button" id="btn-recommend" class="btn btn-accent">Gợi ý GV</button>
+                    <button type="button" id="btn-recommend" class="btn btn-accent">Tìm giảng viên</button>
                 </div>
             </div>
 
@@ -239,10 +239,10 @@ renderHeader('Phân lịch Thông minh', 'schedules');
     <div class="card">
         <h3>Gợi ý Giảng viên Phù hợp &amp; Tối ưu</h3>
         <p style="font-size:13px;color:#64748b;margin-top:0;">
-            Nhập tên học phần, chọn cơ sở &amp; khung giờ bên trái rồi nhấn <strong>Gợi ý GV</strong> để xếp hạng giảng viên theo chuyên môn, tiết trống và quãng đường di chuyển.
+            Nhập tên học phần, chọn cơ sở và khung giờ bên trái rồi nhấn <strong>Tìm giảng viên</strong> để xem danh sách giảng viên phù hợp nhất.
         </p>
         <div id="recommend-results" class="recommend-list">
-            <div class="alert alert-info" style="margin:0;">Chưa chạy phân tích. Nhấn nút <strong>Gợi ý GV</strong> để xem danh sách đề xuất.</div>
+            <div class="alert alert-info" style="margin:0;">Nhấn nút <strong>Tìm giảng viên</strong> để xem danh sách đề xuất phù hợp.</div>
         </div>
     </div>
 </div>

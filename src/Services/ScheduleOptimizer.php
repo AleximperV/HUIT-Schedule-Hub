@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Config\Database;
 use App\Models\Availability;
+use App\Models\Branch;
 use App\Models\Schedule;
 use App\Models\Teacher;
 
@@ -172,9 +173,14 @@ class ScheduleOptimizer
                     $sameBranchCount++;
                 }
             }
+            $candBranchName = $candidate['branch_name'] ?? '';
+            if ($candBranchName === '') {
+                $bRow = Branch::find((int) $candidate['branch_id']);
+                $candBranchName = $bRow['branch_name'] ?? 'Cơ sở đã chọn';
+            }
             $items[] = [
                 'branch_id' => (int) $candidate['branch_id'],
-                'branch_name' => $candidate['branch_name'] ?? ('Cơ sở #' . $candidate['branch_id']),
+                'branch_name' => $candBranchName,
                 'shift_or_periods' => $candidate['shift_or_periods'],
                 'subject_name' => $candidate['subject_name'] ?? 'Học phần mới',
                 'start' => $candRange['start'],
@@ -203,7 +209,7 @@ class ScheduleOptimizer
                     'type' => 'travel_tight',
                     'severity' => 'high',
                     'message' => sprintf(
-                        'Di chuyển gấp giữa 2 cơ sở: %s (%s) sang %s (%s). Nên ưu tiên gom cùng cơ sở.',
+                        'Cần di chuyển gấp giữa %s (%s) và %s (%s). Nên sắp xếp dạy cùng một cơ sở để thuận tiện đi lại.',
                         $prev['branch_name'],
                         $prev['shift_or_periods'],
                         $curr['branch_name'],
@@ -212,13 +218,13 @@ class ScheduleOptimizer
                 ];
             }
 
-            // Khoảng trống chết: cách nhau từ 2 ca (từ 4 tiết trống) trở lên trong cùng ngày
+            // Khoảng trống dài giữa các ca trong cùng ngày
             if ($orderGap >= 3 || $periodGap >= 6) {
                 $warnings[] = [
                     'type' => 'dead_gap',
                     'severity' => 'medium',
                     'message' => sprintf(
-                        'Khoảng trống chết giữa %s và %s (nghỉ giữa buổi quá dài).',
+                        'Thời gian nghỉ giữa %s và %s khá dài, nên sắp xếp các ca dạy gần nhau hơn.',
                         $prev['shift_or_periods'],
                         $curr['shift_or_periods']
                     ),
@@ -231,7 +237,7 @@ class ScheduleOptimizer
                 'type' => 'campus_switch',
                 'severity' => 'low',
                 'message' => sprintf(
-                    'Trong %s giảng viên phải di chuyển qua %d cơ sở (%s).',
+                    'Ngày %s giảng viên dạy ở %d cơ sở khác nhau (%s).',
                     self::DAYS[$dayOfWeek] ?? ('Thứ ' . $dayOfWeek),
                     count($branches),
                     implode(' → ', array_values($branches))
@@ -308,10 +314,10 @@ class ScheduleOptimizer
             foreach ($analysis['warnings'] as $w) {
                 if ($w['type'] === 'travel_tight') {
                     $score -= 25;
-                    $reasons[] = ['label' => 'Chuyển cơ sở gấp', 'type' => 'warning'];
+                    $reasons[] = ['label' => 'Di chuyển gấp giữa 2 cơ sở', 'type' => 'warning'];
                 } elseif ($w['type'] === 'dead_gap') {
                     $score -= 15;
-                    $reasons[] = ['label' => 'Có khoảng trống chết', 'type' => 'warning'];
+                    $reasons[] = ['label' => 'Lịch dạy bị rời rạc', 'type' => 'warning'];
                 }
             }
 

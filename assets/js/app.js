@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="${cls}">
                             <div>
                                 <strong>${escapeHtml(item.full_name)}</strong>
-                                <span class="badge badge-secondary">Điểm: ${item.score}</span>
+                                <span class="badge badge-secondary">Phù hợp: ${item.score}</span>
                                 <div style="font-size:12px;color:#475569;margin:3px 0;">Chuyên môn: ${escapeHtml(item.expertise)}</div>
                                 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${badges}</div>
                                 ${warns}
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div>
                                 <button type="button" class="btn btn-sm ${item.available ? 'btn-primary' : 'btn-outline'}"
                                     onclick="selectRecommendedTeacher(${item.teacher_id})" ${!item.available ? 'disabled' : ''}>
-                                    ${item.available ? 'Chọn GV' : 'Trùng lịch'}
+                                    ${item.available ? 'Chọn' : 'Trùng lịch'}
                                 </button>
                             </div>
                         </div>
