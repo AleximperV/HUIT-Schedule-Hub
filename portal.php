@@ -148,18 +148,6 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
     </div>
 </div>
 
-<div class="schedule-toolbar no-print">
-    <form method="GET" action="portal.php" style="display:inline-flex;margin:0;">
-        <input type="hidden" name="teacher_id" value="<?= $activeTeacherId ?>">
-        <input type="hidden" name="view" value="<?= e($viewMode) ?>">
-        <input type="date" name="date" value="<?= e($selectedDate) ?>" onchange="this.form.submit()" aria-label="Chọn ngày">
-    </form>
-    <a href="<?= e($buildPortalUrl(['date' => $todayStr])) ?>" class="btn btn-sky">&#128197; Hiện tại</a>
-    <button type="button" class="btn btn-sky" onclick="window.print()">&#128424; In lịch</button>
-    <a href="<?= e($buildPortalUrl(['date' => $prevDate])) ?>" class="btn btn-sky">&lsaquo; Trở về</a>
-    <a href="<?= e($buildPortalUrl(['date' => $nextDate])) ?>" class="btn btn-sky">Tiếp &rsaquo;</a>
-</div>
-
 <div class="grid-2">
     <div class="card">
         <h3>Cơ sở cần đến dạy trong tuần</h3>
@@ -198,6 +186,17 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
             <div class="alert alert-success" style="margin:0;">Lịch giảng dạy hiện tại tối ưu, không có xung đột hay di chuyển gấp giữa các cơ sở.</div>
         <?php endif; ?>
     </div>
+</div>
+
+<div class="schedule-toolbar no-print">
+    <form method="GET" action="portal.php" style="display:inline-flex;margin:0;">
+        <input type="hidden" name="teacher_id" value="<?= $activeTeacherId ?>">
+        <input type="hidden" name="view" value="<?= e($viewMode) ?>">
+        <input type="date" name="date" value="<?= e($selectedDate) ?>" onchange="this.form.submit()" aria-label="Chọn ngày">
+    </form>
+    <a href="<?= e($buildPortalUrl(['date' => $todayStr])) ?>" class="btn btn-sky">&#128197; Hiện tại</a>
+    <a href="<?= e($buildPortalUrl(['date' => $prevDate])) ?>" class="btn btn-sky">&lsaquo; Trở về</a>
+    <a href="<?= e($buildPortalUrl(['date' => $nextDate])) ?>" class="btn btn-sky">Tiếp &rsaquo;</a>
 </div>
 
 <?php if ($viewMode === 'week'): ?>
