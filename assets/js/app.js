@@ -26,8 +26,37 @@ function showToast(message, type = 'info') {
     initToast(toast);
 }
 
+function openModal(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.add('open');
+    }
+}
+
+function closeModal(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.remove('open');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('#toast-container .toast').forEach(initToast);
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+        backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) {
+                backdrop.classList.remove('open');
+            }
+        });
+        backdrop.querySelectorAll('[data-close-modal]').forEach(btn => {
+            btn.addEventListener('click', () => backdrop.classList.remove('open'));
+        });
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
+        }
+    });
     const btnRecommend = document.getElementById('btn-recommend');
     const recommendBox = document.getElementById('recommend-results');
 
