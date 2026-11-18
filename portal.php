@@ -67,6 +67,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $viewMode = ($_GET['view'] ?? 'week') === 'month' ? 'month' : 'week';
+$rawDate = trim((string) ($_GET['date'] ?? date('Y-m-d')));
+$dt = DateTimeImmutable::createFromFormat('Y-m-d', $rawDate) ?: new DateTimeImmutable('today');
+$selectedDate = $dt->format('Y-m-d');
+$todayStr = date('Y-m-d');
+
+// Tính ngày đầu tuần (Thứ 2) & danh sách 7 ngày trong tuần
+$isoWeekday = (int) $dt->format('N'); // 1=Mon .. 7=Sun
+$weekStart = $dt->modify('-' . ($isoWeekday - 1) . ' days');
+$weekDates = [];
+foreach (ScheduleOptimizer::DAYS as $dNum => $dName) {
+    $offset = $dNum - 2; // 2->0 .. 8->6
+    $dObj = $weekStart->modify("+{$offset} days");
+    $weekDates[$dNum] = $dObj->format('Y-m-d');
+}
+
+$prevDate = $viewMode === 'month' ? $dt->modify('-1 month')->format('Y-m-d') : $dt->modify('-7 days')->format('Y-m-d');
+$nextDate = $viewMode === 'month' ? $dt->modify('+1 month')->format('Y-m-d') : $dt->modify('+7 days')->format('Y-m-d');
+
+$buildPortalUrl = static function (array $overrides = []) use ($activeTeacherId, $viewMode, $selectedDate): string {
+    $params = array_merge([
+        'teacher_id' => $activeTeacherId,
+        'view' => $viewMode,
+        'date' => $selectedDate,
+    ], $overrides);
+    return 'portal.php?' . http_build_query($params);
+};
+
 $schedules = Schedule::all(['teacher_id' => $activeTeacherId]);
 $availabilities = Availability::all($activeTeacherId);
 $branches = Branch::all();
@@ -89,10 +116,10 @@ foreach ($schedules as $s) {
     }
 }
 
-$year = (int) date('Y');
-$month = (int) date('n');
-$daysInMonth = (int) date('t');
-$firstWeekday = (int) date('N', strtotime(sprintf('%04d-%02d-01', $year, $month))); // 1=Mon .. 7=Sun
+$year = (int) $dt->format('Y');
+$month = (int) $dt->format('n');
+$daysInMonth = (int) $dt->format('t');
+$firstWeekday = (int) $dt->modify('first day of this month')->format('N'); // 1=Mon .. 7=Sun
 
 renderHeader('Cổng thông tin Giảng viên', 'portal');
 ?>
@@ -102,10 +129,11 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
         <h1>Cổng thông tin Giảng viên: <?= e($teacher['full_name']) ?></h1>
         <p>Chuyên môn: <strong><?= e($teacher['expertise']) ?></strong> &bull; Email: <?= e($teacher['email']) ?></p>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <div class="no-print" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <?php if (AuthService::isAdmin()): ?>
             <form method="GET" action="portal.php" style="display:flex;gap:6px;margin:0;">
                 <input type="hidden" name="view" value="<?= e($viewMode) ?>">
+                <input type="hidden" name="date" value="<?= e($selectedDate) ?>">
                 <select name="teacher_id" onchange="this.form.submit()">
                     <?php foreach ($teachers as $t): ?>
                         <option value="<?= (int) $t['id'] ?>" <?= (int) $t['id'] === $activeTeacherId ? 'selected' : '' ?>>
@@ -115,9 +143,21 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
                 </select>
             </form>
         <?php endif; ?>
-        <a href="portal.php?teacher_id=<?= $activeTeacherId ?>&view=week" class="btn btn-sm <?= $viewMode === 'week' ? 'btn-primary' : 'btn-outline' ?>">Lịch theo Tuần</a>
-        <a href="portal.php?teacher_id=<?= $activeTeacherId ?>&view=month" class="btn btn-sm <?= $viewMode === 'month' ? 'btn-primary' : 'btn-outline' ?>">Lịch theo Tháng</a>
+        <a href="<?= e($buildPortalUrl(['view' => 'week'])) ?>" class="btn btn-sm <?= $viewMode === 'week' ? 'btn-primary' : 'btn-outline' ?>">Lịch theo Tuần</a>
+        <a href="<?= e($buildPortalUrl(['view' => 'month'])) ?>" class="btn btn-sm <?= $viewMode === 'month' ? 'btn-primary' : 'btn-outline' ?>">Lịch theo Tháng</a>
     </div>
+</div>
+
+<div class="schedule-toolbar no-print">
+    <form method="GET" action="portal.php" style="display:inline-flex;margin:0;">
+        <input type="hidden" name="teacher_id" value="<?= $activeTeacherId ?>">
+        <input type="hidden" name="view" value="<?= e($viewMode) ?>">
+        <input type="date" name="date" value="<?= e($selectedDate) ?>" onchange="this.form.submit()" aria-label="Chọn ngày">
+    </form>
+    <a href="<?= e($buildPortalUrl(['date' => $todayStr])) ?>" class="btn btn-sky">&#128197; Hiện tại</a>
+    <button type="button" class="btn btn-sky" onclick="window.print()">&#128424; In lịch</button>
+    <a href="<?= e($buildPortalUrl(['date' => $prevDate])) ?>" class="btn btn-sky">&lsaquo; Trở về</a>
+    <a href="<?= e($buildPortalUrl(['date' => $nextDate])) ?>" class="btn btn-sky">Tiếp &rsaquo;</a>
 </div>
 
 <div class="grid-2">
@@ -162,14 +202,20 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
 
 <?php if ($viewMode === 'week'): ?>
 <div class="card">
-    <h3>Thời khóa biểu theo Tuần</h3>
+    <h3>Thời khóa biểu theo Tuần (<?= date('d/m/Y', strtotime($weekDates[2])) ?> &ndash; <?= date('d/m/Y', strtotime($weekDates[8])) ?>)</h3>
     <div class="table-wrap">
         <table class="timetable-grid">
             <thead>
                 <tr>
                     <th>Buổi / Tiết</th>
-                    <?php foreach (ScheduleOptimizer::DAYS as $dNum => $dName): ?>
-                        <th><?= e($dName) ?></th>
+                    <?php foreach (ScheduleOptimizer::DAYS as $dNum => $dName):
+                        $colDate = $weekDates[$dNum];
+                        $isToday = $colDate === $todayStr;
+                        ?>
+                        <th class="<?= $isToday ? 'today-col' : '' ?>">
+                            <?= e($dName) ?><br>
+                            <small style="font-weight:500;color:#475569;"><?= date('d/m/Y', strtotime($colDate)) ?></small>
+                        </th>
                     <?php endforeach; ?>
                 </tr>
             </thead>
@@ -177,8 +223,10 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
                 <?php foreach (array_keys(ScheduleOptimizer::SLOTS) as $slotName): ?>
                     <tr>
                         <td><strong><?= e($slotName) ?></strong></td>
-                        <?php foreach (ScheduleOptimizer::DAYS as $dNum => $dName): ?>
-                            <td>
+                        <?php foreach (ScheduleOptimizer::DAYS as $dNum => $dName):
+                            $isToday = $weekDates[$dNum] === $todayStr;
+                            ?>
+                            <td class="<?= $isToday ? 'today-col' : '' ?>">
                                 <?php if (!empty($grid[$dNum][$slotName])): ?>
                                     <?php foreach ($grid[$dNum][$slotName] as $item): ?>
                                         <div class="slot-card">
@@ -207,11 +255,13 @@ renderHeader('Cổng thông tin Giảng viên', 'portal');
             <div class="cal-cell empty"></div>
         <?php endfor; ?>
         <?php for ($day = 1; $day <= $daysInMonth; $day++):
-            $isoN = (int) date('N', strtotime(sprintf('%04d-%02d-%02d', $year, $month, $day))); // 1..7
+            $cellDate = sprintf('%04d-%02d-%02d', $year, $month, $day);
+            $isoN = (int) date('N', strtotime($cellDate)); // 1..7
             $dbDay = $isoN + 1; // 2..8
             $daySlots = $grid[$dbDay] ?? [];
+            $isToday = $cellDate === $todayStr;
             ?>
-            <div class="cal-cell">
+            <div class="cal-cell <?= $isToday ? 'today-col' : '' ?>">
                 <div class="cal-date"><?= $day ?>/<?= $month ?></div>
                 <?php foreach ($daySlots as $slotList): ?>
                     <?php foreach ($slotList as $item): ?>
