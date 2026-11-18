@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 use App\Services\AuthService;
 
 AuthService::logout();
-header('Location: index.php');
+header('Location: login.php');
 exit;
