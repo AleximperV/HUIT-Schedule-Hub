@@ -36,16 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $branches = [];
 $branchStats = [];
-$teachers = [];
-$schedules = [];
-$availabilities = [];
 
 try {
     $branches = Branch::all();
     $branchStats = Schedule::statsByBranch();
-    $teachers = Teacher::all();
-    $schedules = Schedule::all();
-    $availabilities = Availability::all();
 } catch (Throwable $e) {
     // Bỏ qua nếu DB chưa khởi tạo
 }
@@ -150,7 +144,7 @@ foreach ($branchStats as $bs) {
             display: grid;
             grid-template-columns: 1fr 360px;
             gap: 24px;
-            align-items: start;
+            align-items: stretch;
         }
 
         .info-panel {
@@ -276,8 +270,12 @@ foreach ($branchStats as $bs) {
             background: linear-gradient(180deg, #eef6ff 0%, #ffffff 45%, #fff7ed 100%);
             border: 1px solid #cbd5e1;
             border-radius: 10px;
-            padding: 26px 24px;
+            padding: 32px 24px;
             box-shadow: 0 6px 20px rgba(0, 62, 133, 0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .login-card-header {
             text-align: center;
@@ -374,58 +372,20 @@ foreach ($branchStats as $bs) {
                     <strong>HUIT SCHEDULE HUB &mdash; PHÂN LỊCH ĐA CƠ SỞ</strong>
                 </div>
             </a>
-            <a href="index.php" class="huit-banner-link">Xem Tổng quan Lịch</a>
+            <?php if (AuthService::user()): ?>
+                <a href="index.php" class="huit-banner-link">Vào Hệ thống</a>
+            <?php endif; ?>
         </div>
     </header>
 
     <main class="login-container">
         <section class="info-panel">
             <div class="info-tabs">
-                <button type="button" class="info-tab active" data-tab="tab-overview">Tổng quan &amp; Lịch giảng dạy</button>
-                <button type="button" class="info-tab" data-tab="tab-branches">Cơ sở đào tạo (<?= count($branches) ?>)</button>
+                <button type="button" class="info-tab active" data-tab="tab-branches">Cơ sở đào tạo (<?= count($branches) ?>)</button>
                 <button type="button" class="info-tab" data-tab="tab-features">Tính năng thông minh</button>
             </div>
 
-            <div class="tab-pane active" id="tab-overview">
-                <div class="mini-stats">
-                    <div class="mini-stat">
-                        <span>Cơ sở đào tạo</span>
-                        <strong><?= count($branches) ?></strong>
-                    </div>
-                    <div class="mini-stat">
-                        <span>Giảng viên</span>
-                        <strong><?= count($teachers) ?></strong>
-                    </div>
-                    <div class="mini-stat">
-                        <span>Lớp đang phân lịch</span>
-                        <strong><?= count($schedules) ?></strong>
-                    </div>
-                    <div class="mini-stat">
-                        <span>Tiết trống khả dụng</span>
-                        <strong><?= count($availabilities) ?></strong>
-                    </div>
-                </div>
-
-                <?php if (empty($schedules)): ?>
-                    <p style="color:#64748b;margin:0;">Chưa có dữ liệu lịch dạy trong hệ thống.</p>
-                <?php else: ?>
-                    <?php foreach (array_slice($schedules, 0, 5) as $s): ?>
-                        <div class="news-item">
-                            <div class="slot-badge">
-                                <div class="top"><?= e(ScheduleOptimizer::DAYS[(int) $s['day_of_week']] ?? ('Thứ ' . $s['day_of_week'])) ?></div>
-                                <div class="bottom"><?= e($s['room']) ?></div>
-                            </div>
-                            <div class="news-body">
-                                <h4><?= e($s['subject_name']) ?></h4>
-                                <p>Giảng viên: <strong><?= e($s['teacher_name']) ?></strong> &bull; Cơ sở: <?= e($s['branch_name']) ?></p>
-                                <span class="meta-pill"><?= e($s['shift_or_periods']) ?></span>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-
-            <div class="tab-pane" id="tab-branches">
+            <div class="tab-pane active" id="tab-branches">
                 <?php if (empty($branches)): ?>
                     <p style="color:#64748b;margin:0;">Đang cập nhật danh sách cơ sở đào tạo.</p>
                 <?php else: ?>
