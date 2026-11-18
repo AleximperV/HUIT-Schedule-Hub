@@ -329,14 +329,52 @@ foreach ($branchStats as $bs) {
         .btn-login-orange:hover {
             background: var(--huit-orange-hover);
         }
-        .alert {
-            padding: 10px 12px;
-            border-radius: 7px;
-            font-size: 13px;
-            margin-bottom: 14px;
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 380px;
+            width: calc(100vw - 32px);
         }
-        .alert-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-        .alert-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .toast {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 13px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            background: #fff;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+            border-left: 4px solid #0284c7;
+            animation: toastIn 0.25s ease-out;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        .toast.hiding { opacity: 0; transform: translateX(20px); }
+        .toast-danger  { border-left-color: #dc2626; background: #fef2f2; color: #991b1b; }
+        .toast-warning { border-left-color: #d97706; background: #fffbeb; color: #92400e; }
+        .toast-success { border-left-color: #16a34a; background: #f0fdf4; color: #166534; }
+        .toast-body { flex: 1; line-height: 1.45; }
+        .toast-close {
+            background: transparent;
+            border: none;
+            color: inherit;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            opacity: 0.65;
+            padding: 0 2px;
+        }
+        .toast-close:hover { opacity: 1; }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(24px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
         .login-note {
             margin-top: 16px;
             padding-top: 14px;
@@ -445,13 +483,6 @@ foreach ($branchStats as $bs) {
                 <h2>ĐĂNG NHẬP HỆ THỐNG</h2>
             </div>
 
-            <?php if ($error !== ''): ?>
-                <div class="alert alert-danger"><?= e($error) ?></div>
-            <?php endif; ?>
-            <?php if (isset($_GET['error']) && $_GET['error'] === 'admin_required'): ?>
-                <div class="alert alert-warning">Vui lòng đăng nhập bằng tài khoản Phòng Đào tạo để truy cập chức năng quản trị.</div>
-            <?php endif; ?>
-
             <form method="POST" action="login.php" autocomplete="off" class="login-form">
                 <input type="email" name="email" id="email" required placeholder="Nhập email tài khoản">
                 <input type="password" name="password" id="password" required placeholder="Nhập mật khẩu">
@@ -468,7 +499,30 @@ foreach ($branchStats as $bs) {
         &copy; <?= date('Y') ?> HUIT Schedule Hub &mdash; Hệ thống Quản lý &amp; Phân lịch giảng dạy đa cơ sở
     </footer>
 
+    <div class="toast-container" id="toast-container">
+        <?php if ($error !== ''): ?>
+            <div class="toast toast-danger" role="alert">
+                <div class="toast-body"><?= e($error) ?></div>
+                <button type="button" class="toast-close" aria-label="Đóng">&times;</button>
+            </div>
+        <?php endif; ?>
+        <?php if (isset($_GET['error']) && $_GET['error'] === 'admin_required'): ?>
+            <div class="toast toast-warning" role="alert">
+                <div class="toast-body">Vui lòng đăng nhập bằng tài khoản Phòng Đào tạo để truy cập chức năng quản trị.</div>
+                <button type="button" class="toast-close" aria-label="Đóng">&times;</button>
+            </div>
+        <?php endif; ?>
+    </div>
+
     <script>
+    document.querySelectorAll('#toast-container .toast').forEach(toast => {
+        const dismiss = () => {
+            toast.classList.add('hiding');
+            setTimeout(() => toast.remove(), 260);
+        };
+        toast.querySelector('.toast-close')?.addEventListener('click', dismiss);
+        setTimeout(dismiss, 4500);
+    });
     document.querySelectorAll('.info-tab').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.info-tab').forEach(b => b.classList.remove('active'));

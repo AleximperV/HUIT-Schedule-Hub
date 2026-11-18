@@ -91,12 +91,15 @@ function renderHeader(string $title, string $activeNav = 'dashboard'): void
         </aside>
 
         <div class="main-wrap">
-            <main class="main-content">
+            <div class="toast-container" id="toast-container">
                 <?php if ($flash): ?>
-                    <div class="alert alert-<?= e($flash['type']) ?>">
-                        <?= e($flash['message']) ?>
+                    <div class="toast toast-<?= e($flash['type']) ?>" role="alert">
+                        <div class="toast-body"><?= e($flash['message']) ?></div>
+                        <button type="button" class="toast-close" aria-label="Đóng">&times;</button>
                     </div>
                 <?php endif; ?>
+            </div>
+            <main class="main-content">
     <?php
 }
 

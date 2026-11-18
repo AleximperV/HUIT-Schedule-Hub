@@ -1,4 +1,33 @@
+function initToast(el) {
+    const closeBtn = el.querySelector('.toast-close');
+    const dismiss = () => {
+        el.classList.add('hiding');
+        setTimeout(() => el.remove(), 260);
+    };
+    if (closeBtn) {
+        closeBtn.addEventListener('click', dismiss);
+    }
+    setTimeout(dismiss, 4500);
+}
+
+function showToast(message, type = 'info') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `<div class="toast-body">${escapeHtml(message)}</div><button type="button" class="toast-close" aria-label="Đóng">&times;</button>`;
+    container.appendChild(toast);
+    initToast(toast);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#toast-container .toast').forEach(initToast);
     const btnRecommend = document.getElementById('btn-recommend');
     const recommendBox = document.getElementById('recommend-results');
 

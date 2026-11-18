@@ -123,14 +123,13 @@ renderHeader('Phân lịch Thông minh', 'schedules');
 </div>
 
 <?php if (!empty($errors)): ?>
-    <div class="alert alert-danger">
-        <strong>Không thể lưu lịch dạy do phát hiện xung đột:</strong>
-        <ul style="margin:6px 0 0;padding-left:18px;">
-            <?php foreach ($errors as $err): ?>
-                <li><?= e($err) ?></li>
-            <?php endforeach; ?>
-        </ul>
-    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        <?php foreach ($errors as $err): ?>
+            showToast(<?= json_encode($err, JSON_UNESCAPED_UNICODE) ?>, 'danger');
+        <?php endforeach; ?>
+    });
+    </script>
 <?php endif; ?>
 
 <div class="grid-2">
