@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $branches = Branch::all();
+$pgBranches = paginateArray($branches, 10);
 
 renderHeader('Quản lý Cơ sở Đào tạo', 'branches');
 ?>
@@ -76,7 +77,7 @@ renderHeader('Quản lý Cơ sở Đào tạo', 'branches');
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($branches as $b): ?>
+                <?php foreach ($pgBranches['items'] as $b): ?>
                     <tr>
                         <td>#<?= (int) $b['id'] ?></td>
                         <td><strong><?= e($b['branch_name']) ?></strong></td>
@@ -99,6 +100,7 @@ renderHeader('Quản lý Cơ sở Đào tạo', 'branches');
             </tbody>
         </table>
     </div>
+    <?php renderPagination($pgBranches); ?>
 </div>
 
 <div class="modal-backdrop" id="branch-modal">

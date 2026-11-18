@@ -26,6 +26,83 @@ function getFlash(): ?array
     return $flash;
 }
 
+function paginateArray(array $items, int $defaultPerPage = 10, string $pageParam = 'page', string $perPageParam = 'per_page'): array
+{
+    $allowed = [5, 10, 20, 50];
+    $perPage = isset($_GET[$perPageParam]) ? (int) $_GET[$perPageParam] : $defaultPerPage;
+    if (!in_array($perPage, $allowed, true)) {
+        $perPage = $defaultPerPage;
+    }
+
+    $total = count($items);
+    $totalPages = max(1, (int) ceil($total / $perPage));
+    $page = isset($_GET[$pageParam]) ? (int) $_GET[$pageParam] : 1;
+    $page = max(1, min($page, $totalPages));
+
+    return [
+        'items' => array_slice($items, ($page - 1) * $perPage, $perPage),
+        'total' => $total,
+        'page' => $page,
+        'per_page' => $perPage,
+        'total_pages' => $totalPages,
+        'page_param' => $pageParam,
+        'per_page_param' => $perPageParam,
+    ];
+}
+
+function renderPagination(array $pg): void
+{
+    $total = $pg['total'];
+    $page = $pg['page'];
+    $perPage = $pg['per_page'];
+    $totalPages = $pg['total_pages'];
+    $pageParam = $pg['page_param'];
+    $perPageParam = $pg['per_page_param'];
+
+    $from = $total === 0 ? 0 : (($page - 1) * $perPage + 1);
+    $to = min($total, $page * $perPage);
+
+    $buildUrl = static function (int $targetPage, ?int $targetPerPage = null) use ($pageParam, $perPageParam, $perPage): string {
+        $params = $_GET;
+        $params[$pageParam] = $targetPage;
+        $params[$perPageParam] = $targetPerPage ?? $perPage;
+        return '?' . http_build_query($params);
+    };
+    ?>
+    <div class="pagination-bar">
+        <div class="pagination-left">
+            <span>Hiển thị <strong><?= $from ?>–<?= $to ?></strong> / <strong><?= $total ?></strong> mục</span>
+            <form method="GET" style="display:inline-flex;align-items:center;gap:6px;margin:0;">
+                <?php foreach ($_GET as $k => $v):
+                    if ($k === $pageParam || $k === $perPageParam || is_array($v)) {
+                        continue;
+                    }
+                    ?>
+                    <input type="hidden" name="<?= e((string) $k) ?>" value="<?= e((string) $v) ?>">
+                <?php endforeach; ?>
+                <input type="hidden" name="<?= e($pageParam) ?>" value="1">
+                <label for="per_page_select_<?= e($perPageParam) ?>">Hiển thị:</label>
+                <select name="<?= e($perPageParam) ?>" id="per_page_select_<?= e($perPageParam) ?>" onchange="this.form.submit()">
+                    <?php foreach ([5, 10, 20, 50] as $opt): ?>
+                        <option value="<?= $opt ?>" <?= $perPage === $opt ? 'selected' : '' ?>><?= $opt ?> / trang</option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+        </div>
+
+        <?php if ($totalPages > 1): ?>
+        <div class="page-links">
+            <a href="<?= e($buildUrl(max(1, $page - 1))) ?>" class="page-btn <?= $page <= 1 ? 'disabled' : '' ?>">&laquo;</a>
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                <a href="<?= e($buildUrl($i)) ?>" class="page-btn <?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
+            <?php endfor; ?>
+            <a href="<?= e($buildUrl(min($totalPages, $page + 1))) ?>" class="page-btn <?= $page >= $totalPages ? 'disabled' : '' ?>">&raquo;</a>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php
+}
+
 function renderHeader(string $title, string $activeNav = 'dashboard'): void
 {
     $user = AuthService::user();

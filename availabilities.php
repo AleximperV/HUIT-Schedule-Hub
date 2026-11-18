@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $teachers = Teacher::all();
 $branches = Branch::all();
 $availabilities = Availability::all();
+$pgAvail = paginateArray($availabilities, 10);
 
 renderHeader('Quản lý Tiết trống Giảng viên', 'availabilities');
 ?>
@@ -78,7 +79,7 @@ renderHeader('Quản lý Tiết trống Giảng viên', 'availabilities');
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($availabilities as $av): ?>
+                <?php foreach ($pgAvail['items'] as $av): ?>
                     <tr>
                         <td><strong><?= e($av['teacher_name']) ?></strong></td>
                         <td><?= e(ScheduleOptimizer::DAYS[(int) $av['day_of_week']] ?? '') ?></td>
@@ -97,6 +98,7 @@ renderHeader('Quản lý Tiết trống Giảng viên', 'availabilities');
             </tbody>
         </table>
     </div>
+    <?php renderPagination($pgAvail); ?>
 </div>
 
 <div class="modal-backdrop" id="availability-modal">

@@ -72,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $teachers = Teacher::all();
+$pgTeachers = paginateArray($teachers, 10);
 
 renderHeader('Quản lý Giảng viên', 'teachers');
 ?>
@@ -98,7 +99,7 @@ renderHeader('Quản lý Giảng viên', 'teachers');
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($teachers as $t): ?>
+                <?php foreach ($pgTeachers['items'] as $t): ?>
                     <tr>
                         <td><strong><?= e($t['full_name']) ?></strong></td>
                         <td>
@@ -131,6 +132,7 @@ renderHeader('Quản lý Giảng viên', 'teachers');
             </tbody>
         </table>
     </div>
+    <?php renderPagination($pgTeachers); ?>
 </div>
 
 <div class="modal-backdrop" id="teacher-modal">

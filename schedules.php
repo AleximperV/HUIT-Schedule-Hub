@@ -100,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $branches = Branch::all();
 $teachers = Teacher::all();
 $schedules = Schedule::all();
+$pgSchedules = paginateArray($schedules, 10);
 $availabilities = Availability::all();
 
 // Lọc ra các tiết trống chưa bị xếp lịch
@@ -286,7 +287,7 @@ renderHeader('Phân lịch Thông minh', 'schedules');
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($schedules as $s): ?>
+                <?php foreach ($pgSchedules['items'] as $s): ?>
                     <tr>
                         <td>#<?= (int) $s['id'] ?></td>
                         <td>
@@ -311,6 +312,7 @@ renderHeader('Phân lịch Thông minh', 'schedules');
             </tbody>
         </table>
     </div>
+    <?php renderPagination($pgSchedules); ?>
 </div>
 
 <?php renderFooter(); ?>

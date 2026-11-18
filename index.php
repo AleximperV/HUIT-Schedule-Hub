@@ -12,6 +12,10 @@ use App\Services\AuthService;
 use App\Services\ScheduleOptimizer;
 
 AuthService::startSession();
+if (!AuthService::user()) {
+    header('Location: login.php');
+    exit;
+}
 
 $branchId = !empty($_GET['branch_id']) ? (int) $_GET['branch_id'] : null;
 $teacherId = !empty($_GET['teacher_id']) ? (int) $_GET['teacher_id'] : null;
@@ -24,6 +28,7 @@ $schedules = Schedule::all([
     'teacher_id' => $teacherId,
     'q' => $search,
 ]);
+$pgSchedules = paginateArray($schedules, 10);
 
 $branchStats = Schedule::statsByBranch($teacherId);
 $teacherStats = Schedule::statsByTeacher($branchId);
@@ -178,10 +183,10 @@ renderHeader('Tổng quan Lịch giảng dạy', 'dashboard');
                 </tr>
             </thead>
             <tbody>
-                <?php if (empty($schedules)): ?>
+                <?php if (empty($pgSchedules['items'])): ?>
                     <tr><td colspan="6" style="text-align:center;color:#64748b;">Không có lịch dạy phù hợp với bộ lọc.</td></tr>
                 <?php else: ?>
-                    <?php foreach ($schedules as $row): ?>
+                    <?php foreach ($pgSchedules['items'] as $row): ?>
                         <tr>
                             <td><strong><?= e(ScheduleOptimizer::DAYS[(int) $row['day_of_week']] ?? ('Thứ ' . $row['day_of_week'])) ?></strong></td>
                             <td><span class="badge badge-info"><?= e($row['shift_or_periods']) ?></span></td>
@@ -206,6 +211,7 @@ renderHeader('Tổng quan Lịch giảng dạy', 'dashboard');
             </tbody>
         </table>
     </div>
+    <?php renderPagination($pgSchedules); ?>
 </div>
 
 <script>
