@@ -5,8 +5,12 @@ declare(strict_types=1);
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/Views/layout.php';
 
+use App\Models\Availability;
 use App\Models\Branch;
+use App\Models\Schedule;
+use App\Models\Teacher;
 use App\Services\AuthService;
+use App\Services\ScheduleOptimizer;
 
 AuthService::startSession();
 
@@ -31,10 +35,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $branches = [];
+$branchStats = [];
+$teachers = [];
+$schedules = [];
+$availabilities = [];
+
 try {
     $branches = Branch::all();
+    $branchStats = Schedule::statsByBranch();
+    $teachers = Teacher::all();
+    $schedules = Schedule::all();
+    $availabilities = Availability::all();
 } catch (Throwable $e) {
-    $branches = [];
+    // Bỏ qua nếu DB chưa khởi tạo
+}
+
+$branchCountMap = [];
+foreach ($branchStats as $bs) {
+    $branchCountMap[(int) $bs['id']] = (int) $bs['total_classes'];
 }
 ?>
 <!DOCTYPE html>
@@ -135,7 +153,6 @@ try {
             align-items: start;
         }
 
-        /* Khung thông tin bên trái / giữa */
         .info-panel {
             background: #fff;
             border: 1px solid var(--border);
@@ -151,7 +168,7 @@ try {
         }
         .info-tab {
             padding: 13px 20px;
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 700;
             color: var(--huit-blue);
             background: transparent;
@@ -168,23 +185,49 @@ try {
         }
         .tab-pane {
             display: none;
-            padding: 10px 22px 22px;
+            padding: 18px 22px 22px;
         }
         .tab-pane.active {
             display: block;
         }
+
+        .mini-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .mini-stat {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--huit-blue);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+        .mini-stat span {
+            display: block;
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .mini-stat strong {
+            display: block;
+            font-size: 22px;
+            color: var(--huit-blue-dark);
+            margin-top: 2px;
+        }
+
         .news-item {
             display: flex;
-            gap: 18px;
-            padding: 16px 0;
+            gap: 16px;
+            padding: 14px 0;
             border-bottom: 1px solid var(--border);
             align-items: flex-start;
         }
         .news-item:last-child {
             border-bottom: none;
         }
-        .date-badge {
-            width: 68px;
+        .slot-badge {
+            width: 82px;
             flex-shrink: 0;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
@@ -192,21 +235,21 @@ try {
             text-align: center;
             background: #fff;
         }
-        .date-badge .month {
+        .slot-badge .top {
             background: var(--huit-blue);
             color: #fff;
             font-size: 11px;
             font-weight: 600;
-            padding: 3px 0;
+            padding: 3px 4px;
         }
-        .date-badge .day {
-            font-size: 22px;
+        .slot-badge .bottom {
+            font-size: 13px;
             font-weight: 700;
-            color: var(--huit-blue);
-            padding: 6px 0;
+            color: var(--huit-blue-dark);
+            padding: 7px 4px;
         }
         .news-body h4 {
-            margin: 0 0 6px;
+            margin: 0 0 5px;
             font-size: 15px;
             color: var(--huit-blue);
             line-height: 1.4;
@@ -217,15 +260,18 @@ try {
             color: var(--muted);
             line-height: 1.5;
         }
-        .news-tag {
+        .meta-pill {
             display: inline-block;
             margin-top: 6px;
-            font-size: 12px;
+            margin-right: 6px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11.5px;
             font-weight: 600;
-            color: #dc2626;
+            background: #e0f2fe;
+            color: #075985;
         }
 
-        /* Khung đăng nhập bên phải */
         .login-card {
             background: linear-gradient(180deg, #eef6ff 0%, #ffffff 45%, #fff7ed 100%);
             border: 1px solid #cbd5e1;
@@ -313,9 +359,8 @@ try {
         }
 
         @media (max-width: 900px) {
-            .login-container {
-                grid-template-columns: 1fr;
-            }
+            .login-container { grid-template-columns: 1fr; }
+            .mini-stats { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -336,93 +381,99 @@ try {
     <main class="login-container">
         <section class="info-panel">
             <div class="info-tabs">
-                <button type="button" class="info-tab active" data-tab="tab-general">Thông báo chung</button>
-                <button type="button" class="info-tab" data-tab="tab-branches">Cơ sở đào tạo</button>
-                <button type="button" class="info-tab" data-tab="tab-guide">Hướng dẫn sử dụng</button>
+                <button type="button" class="info-tab active" data-tab="tab-overview">Tổng quan &amp; Lịch giảng dạy</button>
+                <button type="button" class="info-tab" data-tab="tab-branches">Cơ sở đào tạo (<?= count($branches) ?>)</button>
+                <button type="button" class="info-tab" data-tab="tab-features">Tính năng thông minh</button>
             </div>
 
-            <div class="tab-pane active" id="tab-general">
-                <div class="news-item">
-                    <div class="date-badge">
-                        <div class="month">Tháng 11</div>
-                        <div class="day">18</div>
+            <div class="tab-pane active" id="tab-overview">
+                <div class="mini-stats">
+                    <div class="mini-stat">
+                        <span>Cơ sở đào tạo</span>
+                        <strong><?= count($branches) ?></strong>
                     </div>
-                    <div class="news-body">
-                        <h4>Thông báo triển khai hệ thống phân lịch giảng dạy đa cơ sở thông minh (HUIT Schedule Hub)</h4>
-                        <p>Hỗ trợ Phòng Đào tạo sắp xếp thời khóa biểu tối ưu, hạn chế di chuyển gấp giữa các cơ sở và tránh khoảng trống chết.</p>
-                        <span class="news-tag">Mới cập nhật</span>
+                    <div class="mini-stat">
+                        <span>Giảng viên</span>
+                        <strong><?= count($teachers) ?></strong>
                     </div>
-                </div>
-                <div class="news-item">
-                    <div class="date-badge">
-                        <div class="month">Tháng 11</div>
-                        <div class="day">15</div>
+                    <div class="mini-stat">
+                        <span>Lớp đang phân lịch</span>
+                        <strong><?= count($schedules) ?></strong>
                     </div>
-                    <div class="news-body">
-                        <h4>Giảng viên cập nhật khung tiết trống cá nhân cho Học kỳ 1 năm học 2026 - 2027</h4>
-                        <p>Quý thầy/cô đăng nhập vào Cổng thông tin Giảng viên để khai báo các buổi/tiết trống và cơ sở ưu tiên giảng dạy.</p>
+                    <div class="mini-stat">
+                        <span>Tiết trống khả dụng</span>
+                        <strong><?= count($availabilities) ?></strong>
                     </div>
                 </div>
-                <div class="news-item">
-                    <div class="date-badge">
-                        <div class="month">Tháng 11</div>
-                        <div class="day">12</div>
-                    </div>
-                    <div class="news-body">
-                        <h4>Tính năng gợi ý giảng viên phù hợp theo chuyên môn và lịch trống</h4>
-                        <p>Hệ thống tự động đề xuất giảng viên đúng chuyên môn, không trùng giờ và tối ưu quãng đường di chuyển trong ngày.</p>
-                    </div>
-                </div>
-                <div class="news-item">
-                    <div class="date-badge">
-                        <div class="month">Tháng 11</div>
-                        <div class="day">08</div>
-                    </div>
-                    <div class="news-body">
-                        <h4>Tra cứu lịch dạy cá nhân theo Tuần và Tháng trên Cổng Giảng viên</h4>
-                        <p>Giảng viên có thể theo dõi chi tiết phòng học, địa chỉ cơ sở cần đến dạy và các lưu ý chuyển cơ sở trong ngày.</p>
-                    </div>
-                </div>
-            </div>
 
-            <div class="tab-pane" id="tab-branches">
-                <?php if (empty($branches)): ?>
-                    <p style="padding:16px 0;color:#64748b;">Đang cập nhật danh sách cơ sở đào tạo.</p>
+                <?php if (empty($schedules)): ?>
+                    <p style="color:#64748b;margin:0;">Chưa có dữ liệu lịch dạy trong hệ thống.</p>
                 <?php else: ?>
-                    <?php foreach ($branches as $idx => $b): ?>
+                    <?php foreach (array_slice($schedules, 0, 5) as $s): ?>
                         <div class="news-item">
-                            <div class="date-badge">
-                                <div class="month">Cơ sở</div>
-                                <div class="day">0<?= $idx + 1 ?></div>
+                            <div class="slot-badge">
+                                <div class="top"><?= e(ScheduleOptimizer::DAYS[(int) $s['day_of_week']] ?? ('Thứ ' . $s['day_of_week'])) ?></div>
+                                <div class="bottom"><?= e($s['room']) ?></div>
                             </div>
                             <div class="news-body">
-                                <h4><?= e($b['branch_name']) ?></h4>
-                                <p>Địa chỉ: <?= e($b['address']) ?></p>
+                                <h4><?= e($s['subject_name']) ?></h4>
+                                <p>Giảng viên: <strong><?= e($s['teacher_name']) ?></strong> &bull; Cơ sở: <?= e($s['branch_name']) ?></p>
+                                <span class="meta-pill"><?= e($s['shift_or_periods']) ?></span>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
 
-            <div class="tab-pane" id="tab-guide">
+            <div class="tab-pane" id="tab-branches">
+                <?php if (empty($branches)): ?>
+                    <p style="color:#64748b;margin:0;">Đang cập nhật danh sách cơ sở đào tạo.</p>
+                <?php else: ?>
+                    <?php foreach ($branches as $idx => $b): ?>
+                        <div class="news-item">
+                            <div class="slot-badge">
+                                <div class="top">Cơ sở</div>
+                                <div class="bottom">0<?= $idx + 1 ?></div>
+                            </div>
+                            <div class="news-body">
+                                <h4><?= e($b['branch_name']) ?></h4>
+                                <p>Địa chỉ: <?= e($b['address']) ?></p>
+                                <span class="meta-pill"><?= $branchCountMap[(int) $b['id']] ?? 0 ?> ca giảng dạy/tuần</span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <div class="tab-pane" id="tab-features">
                 <div class="news-item">
-                    <div class="date-badge">
-                        <div class="month">Bước</div>
-                        <div class="day">01</div>
+                    <div class="slot-badge">
+                        <div class="top">Tính năng</div>
+                        <div class="bottom">01</div>
                     </div>
                     <div class="news-body">
-                        <h4>Đăng nhập bằng tài khoản được cấp</h4>
-                        <p>Sử dụng email và mật khẩu cá nhân. Hệ thống tự động nhận diện vai trò Phòng Đào tạo hoặc Giảng viên để điều hướng phù hợp.</p>
+                        <h4>Phân lịch theo tiết trống &amp; Tối ưu di chuyển đa cơ sở</h4>
+                        <p>Phát hiện xung đột giờ dạy, trùng phòng học, cảnh báo chuyển cơ sở gấp giữa các tiết liền kề và khoảng trống chết trong ngày.</p>
                     </div>
                 </div>
                 <div class="news-item">
-                    <div class="date-badge">
-                        <div class="month">Bước</div>
-                        <div class="day">02</div>
+                    <div class="slot-badge">
+                        <div class="top">Tính năng</div>
+                        <div class="bottom">02</div>
                     </div>
                     <div class="news-body">
-                        <h4>Truy cập nhanh bằng đường dẫn riêng (dành cho Giảng viên)</h4>
-                        <p>Giảng viên có thể mở trực tiếp đường dẫn Cổng thông tin riêng do Phòng Đào tạo cung cấp mà không cần nhập lại mật khẩu.</p>
+                        <h4>Gợi ý giảng viên phù hợp theo chuyên môn</h4>
+                        <p>Tự động xếp hạng giảng viên đúng chuyên môn, không trùng lịch, có tiết trống đăng ký và ưu tiên giảng viên đang dạy cùng cơ sở.</p>
+                    </div>
+                </div>
+                <div class="news-item">
+                    <div class="slot-badge">
+                        <div class="top">Tính năng</div>
+                        <div class="bottom">03</div>
+                    </div>
+                    <div class="news-body">
+                        <h4>Cổng thông tin Giảng viên (Tuần / Tháng)</h4>
+                        <p>Giảng viên tra cứu lịch dạy cá nhân theo tuần/tháng, xem địa chỉ cơ sở cần đến dạy và tự đăng ký khung tiết trống.</p>
                     </div>
                 </div>
             </div>
