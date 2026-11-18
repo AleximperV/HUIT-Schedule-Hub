@@ -45,16 +45,28 @@ function renderHeader(string $title, string $activeNav = 'dashboard'): void
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <header class="topbar">
-        <div class="container topbar-inner">
-            <a href="index.php" class="brand">
-                <span class="brand-badge">HUIT</span>
-                <span>
-                    <strong>Schedule Hub</strong>
-                    <small>Phân lịch đa cơ sở thông minh</small>
-                </span>
-            </a>
-            <nav class="nav-links">
+    <div class="mobile-topbar">
+        <a href="index.php" class="brand">
+            <span class="brand-badge">HUIT</span>
+            <span><strong>Schedule Hub</strong></span>
+        </a>
+        <button type="button" class="btn btn-sm btn-outline-light" id="sidebar-toggle">Menu</button>
+    </div>
+
+    <div class="app-shell">
+        <aside class="sidebar" id="app-sidebar">
+            <div class="sidebar-top">
+                <a href="index.php" class="brand">
+                    <span class="brand-badge">HUIT</span>
+                    <span>
+                        <strong>Schedule Hub</strong>
+                        <small>Phân lịch đa cơ sở</small>
+                    </span>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">Điều hướng</div>
                 <a href="index.php" class="<?= $activeNav === 'dashboard' ? 'active' : '' ?>">Tổng quan</a>
                 <?php if ($isAdmin): ?>
                     <a href="schedules.php" class="<?= $activeNav === 'schedules' ? 'active' : '' ?>">Phân lịch thông minh</a>
@@ -64,38 +76,47 @@ function renderHeader(string $title, string $activeNav = 'dashboard'): void
                 <?php endif; ?>
                 <a href="portal.php" class="<?= $activeNav === 'portal' ? 'active' : '' ?>">Cổng Giảng viên</a>
             </nav>
-            <div class="auth-box">
+
+            <div class="sidebar-footer">
                 <?php if ($user): ?>
-                    <span class="user-pill">
-                        <?= e($user['name']) ?>
-                        <em><?= $isAdmin ? 'Đào tạo' : 'Giảng viên' ?></em>
-                    </span>
-                    <a href="logout.php" class="btn btn-sm btn-outline-light">Đăng xuất</a>
+                    <div class="sidebar-user">
+                        <div class="sidebar-user-name"><?= e($user['name']) ?></div>
+                        <span class="sidebar-role-badge"><?= $isAdmin ? 'Phòng Đào tạo' : 'Giảng viên' ?></span>
+                    </div>
+                    <a href="logout.php" class="btn btn-sm btn-outline-light" style="width:100%;">Đăng xuất</a>
                 <?php else: ?>
-                    <a href="login.php" class="btn btn-sm btn-accent">Đăng nhập</a>
+                    <a href="login.php" class="btn btn-accent" style="width:100%;">Đăng nhập</a>
                 <?php endif; ?>
             </div>
-        </div>
-    </header>
-    <main class="container main-content">
-        <?php if ($flash): ?>
-            <div class="alert alert-<?= e($flash['type']) ?>">
-                <?= e($flash['message']) ?>
-            </div>
-        <?php endif; ?>
+        </aside>
+
+        <div class="main-wrap">
+            <main class="main-content">
+                <?php if ($flash): ?>
+                    <div class="alert alert-<?= e($flash['type']) ?>">
+                        <?= e($flash['message']) ?>
+                    </div>
+                <?php endif; ?>
     <?php
 }
 
 function renderFooter(): void
 {
     ?>
-    </main>
-    <footer class="footer">
-        <div class="container footer-inner">
-            <span>&copy; <?= date('Y') ?> HUIT Schedule Hub — Quản lý &amp; Phân lịch giảng dạy đa cơ sở</span>
-            <span>MIT License &bull; PHP 8 + MySQL + phpdotenv + Faker</span>
+            </main>
+            <footer class="footer">
+                <div class="footer-inner">
+                    <span>&copy; <?= date('Y') ?> HUIT Schedule Hub — Quản lý &amp; Phân lịch giảng dạy đa cơ sở</span>
+                    <span>MIT License &bull; PHP 8 + MySQL + phpdotenv + Faker</span>
+                </div>
+            </footer>
         </div>
-    </footer>
+    </div>
+    <script>
+    document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+        document.getElementById('app-sidebar')?.classList.toggle('open');
+    });
+    </script>
     <script src="assets/js/app.js"></script>
 </body>
 </html>
